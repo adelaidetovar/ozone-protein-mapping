@@ -2,7 +2,7 @@
 #### Environment ####
 #####################
 
-#### USING R VERSION 4.0.3
+#### USING R VERSION 4.1.1
 
 if (!requireNamespace("BiocManager", quietly = TRUE))
   install.packages("BiocManager")
