@@ -1,4 +1,5 @@
-source("0_functions.R")
+file.sources = c("0_functions.R", "3a_genome_cache.R")
+sapply(file.sources, source)
 
 #############################
 #### About running miqtl ####

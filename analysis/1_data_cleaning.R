@@ -1,5 +1,7 @@
 source("0_functions.R")
 
+setwd("../data")
+
 #################################
 #### Data Input and Cleaning ####
 #################################
