@@ -9,7 +9,7 @@ setwd("../data")
 dir.create("../output")
 
 # BAL data
-bal_data <- read.xlsx('../data/raw_data.xlsx',sheet=1)
+bal_data <- read.xlsx('raw_data.xlsx',sheet=1)
 bal_data$batch <- as.factor(bal_data$batch)
 colnames(bal_data)[5] <- "harvest"
 colnames(bal_data)[4] <- "rx"
@@ -18,7 +18,7 @@ write.table(bal_data, "../output/bal_data.tsv", sep = "\t", quote = FALSE, row.n
 #---------------
 
 # Protein data
-protein_data <- read.xlsx('../data/raw_data.xlsx',sheet=2)
+protein_data <- read.xlsx('raw_data.xlsx',sheet=2)
 protein_data$harvest <- as.factor(protein_data$harvest)
 protein_data$rx <- as.factor(protein_data$rx)
 protein_data$protein.concentration <- as.numeric(protein_data$protein.concentration)

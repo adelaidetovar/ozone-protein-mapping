@@ -1,6 +1,6 @@
 source("0_functions.R")
 
-dir.create("../plots")
+dir.create("../output/plots")
 
 #########################
 #### Phenotype plots ####
@@ -53,7 +53,7 @@ neutrophil_per <- bal_data %>%
             sd = sd(p.pmn),
             n = n(),
             se = sd/sqrt(n))
-# Extract strain order by FA values
+# Extract strain order by O3 values
 strain_order <- neutrophil_per %>%
   filter(rx == "O3", .preserve = TRUE) %>%
   arrange(meanNeutPer) %>%
@@ -76,7 +76,7 @@ neutrophil_num <- bal_data %>%
             sd = sd(total.pmn),
             n = n(),
             se = sd/sqrt(n))
-# Extract strain order by FA values
+# Extract strain order by O3 values
 strain_order <- neutrophil_num %>%
   filter(rx == "O3", .preserve = TRUE) %>%
   arrange(meanNeutNum) %>%
@@ -93,8 +93,255 @@ neut_plot <- balPlot(neutrophil_num, meanNeutNum,
 # Arranged BAL data plot
 neutrophils_arranged <- neup_plot / neut_plot
 
-ggsave(neutrophils_arranged, filename="../plots/neutrophils_arranged.png", dpi = 300,
+ggsave(neutrophils_arranged, filename="../output/plots/neutrophils_arranged.png", dpi = 300,
        units = "in", width = 13, height = 8)
+
+#---------------
+
+# Macrophage plots
+
+# Summarize BAL data - macrophage percentage
+macrophage_per <- bal_data %>%
+  filter(!is.na(p.mac)) %>%
+  filter(mouse_id != c("5168","5386")) %>%
+  group_by(strain, rx) %>%
+  summarize(meanMacPer = mean(p.mac),
+            sd = sd(p.mac),
+            n = n(),
+            se = sd/sqrt(n))
+# Extract strain order by FA values
+strain_order <- macrophage_per %>%
+  filter(rx == "O3", .preserve = TRUE) %>%
+  arrange(meanMacPer) %>%
+  dplyr::select(strain)
+# Reorder
+macrophage_per <- macrophage_per %>%
+  mutate(strain = factor(strain, levels = strain_order$strain))
+
+# Macrophage percentage plot
+macp_plot <- balPlot(macrophage_per, meanMacPer, ylab = "% macrophages in BAL") + 
+  scale_y_continuous(limits=c(0,100),breaks=c(0,25,50,75,100))+
+  theme(legend.position="none")
+
+# Summarize BAL data - total macrophages
+macrophage_num <- bal_data %>%
+  filter(!is.na(p.mac)) %>%
+  filter(mouse_id != c("5168","5386")) %>%
+  group_by(strain, rx) %>%
+  mutate(total.mac = total * p.mac/10) %>%
+  summarize(meanMacNum = mean(total.mac),
+            sd = sd(total.mac),
+            n = n(),
+            se = sd/sqrt(n))
+# Extract strain order by FA values
+strain_order <- macrophage_num %>%
+  filter(rx == "O3", .preserve = TRUE) %>%
+  arrange(meanMacNum) %>%
+  dplyr::select(strain)
+# Reorder
+macrophage_num <- macrophage_num %>%
+  mutate(strain = factor(strain, levels = strain_order$strain))
+
+mact_plot <- balPlot(macrophage_num, meanMacNum,
+                     ylab = parse(text=paste0('"# of macrophages"','~ (10^7)'))) +
+  scale_y_continuous(limits = c(0, 3.5e7), breaks = seq(0,3.5e7,by=5e6), 
+                     labels = c(0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5)) +
+  theme(legend.position = "none")
+
+#---------------
+
+# Total cell number
+
+# Summarize BAL data - total cells
+total_cells <- bal_data %>%
+  filter(!is.na(total)) %>%
+  filter(mouse_id != c("5168","5386")) %>%
+  group_by(strain, rx) %>%
+  mutate(total.cells = total * 10) %>%
+  summarize(meanNum = mean(total.cells),
+            sd = sd(total.cells),
+            n = n(),
+            se = sd/sqrt(n))
+# Extract strain order by FA values
+strain_order <- total_cells %>%
+  filter(rx == "O3", .preserve = TRUE) %>%
+  arrange(meanNum) %>%
+  dplyr::select(strain)
+# Reorder
+total_cells <- total_cells %>%
+  mutate(strain = factor(strain, levels = strain_order$strain))
+
+total_plot <- balPlot(total_cells, meanNum,
+                     ylab = parse(text=paste0('"Total # of BAL cells"','~ (10^7)'))) +
+  scale_y_continuous(limits = c(0, 3.5e7), breaks = seq(0,3.5e7,by=5e6), 
+                     labels = c(0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5))
+
+bal_arranged <- total_plot / macp_plot / mact_plot
+
+ggsave(bal_arranged, filename="../output/plots/bal_arranged.png", dpi = 300,
+       units = "in", width = 13, height = 12)
+
+
+#---------------
+
+# Main data plotted by sex
+
+# Summarize BAL data w sex - neutrophil percentage
+neutrophil_per_sex <- bal_data %>%
+  filter(!is.na(p.pmn)) %>%
+  filter(mouse_id != c("5168","5386")) %>%
+  group_by(strain, rx, sex) %>%
+  summarize(meanNeutPer = mean(p.pmn),
+            sd = sd(p.pmn),
+            n = n(),
+            se = sd/sqrt(n))
+# Extract strain order by FA values (ignoring sex)
+strain_order <- neutrophil_per %>%
+  filter(rx == "O3", .preserve = TRUE) %>%
+  arrange(meanNeutPer) %>%
+  dplyr::select(strain)
+# Reorder
+neutrophil_per_sex <- neutrophil_per_sex %>%
+  mutate(strain = factor(strain, levels = strain_order$strain))
+
+neup_sex <- balSexDiffPlot(df = neutrophil_per_sex, var = meanNeutPer,
+                          ylab = "% neutrophils in BAL")
+
+# Summarize BAL data w sex - total neutrophils
+neutrophil_num_sex <- bal_data %>%
+  filter(!is.na(p.pmn)) %>%
+  filter(mouse_id != c("5168","5386")) %>%
+  group_by(strain, rx, sex) %>%
+  mutate(total.pmn = total * p.pmn/10) %>%
+  summarize(meanNeutNum = mean(total.pmn),
+            sd = sd(total.pmn),
+            n = n(),
+            se = sd/sqrt(n))
+# Extract strain order by O3 values
+strain_order <- neutrophil_num %>%
+  filter(rx == "O3", .preserve = TRUE) %>%
+  arrange(meanNeutNum) %>%
+  dplyr::select(strain)
+# Reorder
+neutrophil_num_sex <- neutrophil_num_sex %>%
+  mutate(strain = factor(strain, levels = strain_order$strain))
+
+
+neut_sex <- balSexDiffPlot(df = neutrophil_num_sex, var = meanNeutNum,
+                           ylab = parse(text=paste0('"# of neutrophils"','~ (10^6)'))) +
+  scale_y_continuous(limits = c(0, 8e6), breaks = seq(0,8e6,by=1.5e6), 
+                     labels = c(0, 1.5, 3, 4.5, 6, 7.5)) +
+  theme(legend.position="none")
+
+# Summarize protein data w sex
+protein_data_sex <- protein_data %>%
+  group_by(strain, rx, sex) %>%
+  summarize(meanConc = mean(protein.concentration),
+            sd = sd(protein.concentration),
+            n = n(),
+            se = sd/sqrt(n))
+# Extract strain order by FA values
+strain_order <- protein_data %>%
+  filter(rx == "FA", .preserve = TRUE) %>%
+  arrange(meanConc) %>%
+  dplyr::select(strain)
+# Reorder
+protein_data_sex <- protein_data_sex %>%
+  mutate(strain = factor(strain, levels = strain_order$strain))
+
+# Protein plot
+protein_sex <- balSexDiffPlot(df = protein_data_sex, var = meanConc,
+                                   ylab = expression(atop("BAL Total Protein", "Concentration (ug/mL)"))) +
+  theme(legend.position="none")
+
+# Arranged protein, neu data by sex plot
+neu_prot_sex_arranged <- neup_sex / neut_sex / protein_sex
+
+ggsave(neu_prot_sex_arranged, filename="../output/plots/neu_prot_sex_arranged.png", dpi = 300,
+       units = "in", width = 13, height = 12)
+
+#---------------
+
+# Other BAL data by sex
+
+# Total cells by sex
+total_cells_sex <- bal_data %>%
+  filter(!is.na(total)) %>%
+  filter(mouse_id != c("5168","5386")) %>%
+  group_by(strain, rx, sex) %>%
+  mutate(total.cells = total * 10) %>%
+  summarize(meanNum = mean(total.cells),
+            sd = sd(total.cells),
+            n = n(),
+            se = sd/sqrt(n))
+# Extract strain order by FA values
+strain_order <- total_cells %>%
+  filter(rx == "O3", .preserve = TRUE) %>%
+  arrange(meanNum) %>%
+  dplyr::select(strain)
+# Reorder
+total_cells_sex <- total_cells_sex %>%
+  mutate(strain = factor(strain, levels = strain_order$strain))
+
+# Plot
+total_sex <- balSexDiffPlot(df = total_cells_sex, var = meanNum,
+                                   ylab = parse(text=paste0('"Total # of BAL cells"','~ (10^7)'))) +
+  scale_y_continuous(limits = c(0, 3.5e7), breaks = seq(0,3.5e7,by=5e6), 
+                     labels = c(0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5))
+
+# Summarize BAL data - macrophage percentage by sex
+macrophage_per_sex <- bal_data %>%
+  filter(!is.na(p.mac)) %>%
+  filter(mouse_id != c("5168","5386")) %>%
+  group_by(strain, rx, sex) %>%
+  summarize(meanMacPer = mean(p.mac),
+            sd = sd(p.mac),
+            n = n(),
+            se = sd/sqrt(n))
+# Extract strain order by FA values
+strain_order <- macrophage_per %>%
+  filter(rx == "O3", .preserve = TRUE) %>%
+  arrange(meanMacPer) %>%
+  dplyr::select(strain)
+# Reorder
+macrophage_per_sex <- macrophage_per_sex %>%
+  mutate(strain = factor(strain, levels = strain_order$strain))
+
+# Macrophage percentage plot
+macp_sex <- balSexDiffPlot(df = macrophage_per_sex, var = meanMacPer,
+                           ylab = "% macrophages in BAL") + 
+  scale_y_continuous(limits=c(0,100),breaks=c(0,25,50,75,100))+
+theme(legend.position="none")
+
+# Summarize BAL data - total macrophages by sex
+macrophage_num_sex <- bal_data %>%
+  filter(!is.na(p.mac)) %>%
+  filter(mouse_id != c("5168","5386")) %>%
+  group_by(strain, rx, sex) %>%
+  mutate(total.mac = total * p.mac/10) %>%
+  summarize(meanMacNum = mean(total.mac),
+            sd = sd(total.mac),
+            n = n(),
+            se = sd/sqrt(n))
+# Extract strain order by FA values
+strain_order <- macrophage_num %>%
+  filter(rx == "O3", .preserve = TRUE) %>%
+  arrange(meanMacNum) %>%
+  dplyr::select(strain)
+# Reorder
+macrophage_num_sex <- macrophage_num_sex %>%
+  mutate(strain = factor(strain, levels = strain_order$strain))
+
+mact_sex <- balSexDiffPlot(df = macrophage_num_sex, var = meanMacNum,
+                     ylab = parse(text=paste0('"# of macrophages"','~ (10^7)'))) +
+  scale_y_continuous(limits = c(0, 3.5e7), breaks = seq(0,3.5e7,by=5e6), 
+                     labels = c(0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5)) +
+  theme(legend.position="none")
+
+bal_sex_arranged <- total_sex / macp_sex / mact_sex
+
+ggsave(bal_sex_arranged, filename="../output/plots/bal_sex_arranged.png", dpi = 300,
+       units = "in", width = 13, height = 12)
 
 ###########################
 #### QTL Mapping Plots ####
@@ -134,7 +381,7 @@ dev.off()
 # Haplotype dosage plot (Chr 10)
 merge.by <- "strain"
 phenotype <- "protein.delta"
-png('../plots/chr10_haplotypedosage.png',units="in",height=6,width=6.45,res=300)
+png('../output/plots/chr10_haplotypedosage.png',units="in",height=6,width=6.45,res=300)
 par(oma=c(0.25,3.5,0.25,0.5))
 prob.heatmap(difference_ten,
              genomecache = cache_path,
@@ -146,7 +393,7 @@ prob.heatmap(difference_ten,
 dev.off()
 
 # 80% credible interval plot (Chr 10)
-png('../plots/chr10_credibleinterval.png',units="in",height=6,width=6.45,res=300)
+png('../output/plots/chr10_credibleinterval.png',units="in",height=6,width=6.45,res=300)
 par(cex=1.5)
 single.chr.plotter.w.ci(difference_rop,difference_positional_ten,
                         ci.type="Parametric Bootstrap",
@@ -155,7 +402,7 @@ single.chr.plotter.w.ci(difference_rop,difference_positional_ten,
 dev.off()
 
 # Straw plot (Chr 10)
-png('../plots/chr10_strawplot.png',res=300,width=6.45,height = 6,units="in")
+png('../output/plots/chr10_strawplot.png',res=300,width=6.45,height = 6,units="in")
 par(cex=1.5)
 plot_locus.effect.from.scan(difference_rop,
                             difference_ten,
@@ -167,7 +414,7 @@ dev.off()
 # Haplotype dosage plot (Chr 15)
 merge.by <- "strain"
 phenotype <- "protein.delta"
-png('../plots/chr15_haplotypedosage.png',units="in",height=6.1,width=6,res=300)
+png('../output/plots/chr15_haplotypedosage.png',units="in",height=6.1,width=6,res=300)
 par(mar=c(0.1,0.8,0.1,3.2))
 prob.heatmap(difference_fift,
              genomecache = cache_path,
@@ -178,7 +425,7 @@ prob.heatmap(difference_fift,
 dev.off()
 
 # 80% credible interval plot (Chr 15)
-png('../plots/chr15_credibleinterval_wide.png',units="in",height=5,width=5,res=300)
+png('../output/plots/chr15_credibleinterval_wide.png',units="in",height=5,width=5,res=300)
 par(cex=1.25)
 single.chr.plotter.w.ci(difference_rop, difference_positional_fift,
                         ci.type="Parametric Bootstrap",
@@ -187,7 +434,7 @@ single.chr.plotter.w.ci(difference_rop, difference_positional_fift,
 dev.off()
 
 # Straw plot (Chr 15)
-png('../plots/chr15_strawplot.png',res=300,width=8,height = 6,units="in")
+png('../output/plots/chr15_strawplot.png',res=300,width=8,height = 6,units="in")
 par(cex=1.5)
 plot_locus.effect.from.scan(difference_rop,
                             difference_fift,
@@ -200,7 +447,7 @@ dev.off()
 # Plot posterior haplotype effects from TIMBR
 load(file='../output/mapping/chr15_timbr.rds')
 
-png('../plots/TIMBR_chr15.png',width=6,height=4,units="in",res=300)
+png('../output/plots/TIMBR_chr15.png',width=6,height=4,units="in",res=300)
 TIMBR.plot.haplotypes(results)
 title(main="TIMBR Results for Chr. 15 QTL")
 dev.off()
@@ -208,7 +455,7 @@ dev.off()
 # Diploffect plot
 load(file='../output/mapping/chr15_diploffect.rds')
 
-png('../plots/Diploffect_chr15.png', width = 6.25, height = 6, units = "in", res = 300)
+png('../output/plots/Diploffect_chr15.png', width = 6.25, height = 6, units = "in", res = 300)
 par(mar=c(0.1,4,0.1,0.5))
 par(cex=1.5)
 plot.straineff.ci(inla.diploffect.summary,main =NULL,
@@ -258,7 +505,7 @@ subspecies_plot <- ggplot() +
   geom_hline(yintercept=6952000,linetype="dashed") +
   geom_text(aes(4.5,6900000,label="peak marker",angle=90,vjust=-0.5),size=5.5)
 
-ggsave(subspecies_plot, filename = "../plots/subspecies_origin_chr15qtl.png", dpi = 300,
+ggsave(subspecies_plot, filename = "../output/plots/subspecies_origin_chr15qtl.png", dpi = 300,
        width = 8, height = 4)
 
 ############################
@@ -306,7 +553,7 @@ geno$col <- rincol[geno$sdp]
 #---------------
 
 # Create top plot
-png('../plots/merge_panel_a_b.png', res = 300, units = "in", height = 12, width = 16)
+png('../output/plots/merge_panel_a_b.png', res = 300, units = "in", height = 12, width = 16)
 par(mfrow=c(2,1),mar=c(2.5,5,0.5,1.1))
 plot(diplo$posm,diplo$logP.founder,xlim=peakI,ylim=c(0,max(geno$logP.merge,diplo$logP.founder)),
      col='red',ylab="-log10(P-value)",xlab=NA,type='l',lwd=2.5)
@@ -356,7 +603,7 @@ data_csq <- data_csq %>%
 
 blcknm <- length(StrDis)
 
-png('../plots/merge_panel_c.png', res = 300, units = "in", height = 3.5, width = 16)
+png('../output/plots/merge_panel_c.png', res = 300, units = "in", height = 3.5, width = 16)
 par(mar=c(2.5,5,0.5,1.1))
 plot(data_csq$posm,data_csq$posm,xlim=peakI,ylim=c(0,(blcknm-0.5)),type='n',yaxt = "n",xlab=paste0('Mb on Chromosome',CHR),ylab='')
 axis(2, at = seq(0.5, (blcknm-0.5) , by = 1), label = StrDis, las=1,cex.axis=1)
@@ -386,7 +633,7 @@ biomTrack <- BiomartGeneRegionTrack(genome="mm10",chromosome=15,
                                     collapseTranscripts="meta",
                                     biomart=useMart(biomart="ensembl", dataset="mmusculus_gene_ensembl"))
 
-pdf('../plots/merge_panel_d.pdf', width=9, height=3, pointsize=300)
+pdf('../output/plots/merge_panel_d.pdf', width=9, height=3, pointsize=300)
 plotTracks(list(axTrack,biomTrack),from=40000000,to=45000000,
            transcriptAnnotation="symbol",
            background.panel="transparent",showTitle=FALSE)
