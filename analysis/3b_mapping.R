@@ -47,7 +47,7 @@ difference_fift <- grab.locus.from.scan(difference_rop, chr=15, return.value="ma
 # Chr 15 locus
 
 # Subsample for top locus (Chr 15)
-difference_rop_fift <- scan.h2lmm(genomecache=cache_path, data=difference, formula=delta ~ 1 + harvest + sex, model="additive",
+difference_rop_fift <- scan.h2lmm(genomecache=cache_path, data=proteinPairs, formula=delta ~ 1 + harvest + sex, model="additive",
                                   use.multi.impute = FALSE, locus.as.fixed=TRUE, return.allele.effects=TRUE,
                                   just.these.loci = difference_fift, pheno.id = "mouse_id", geno.id="strain")
 
@@ -61,7 +61,7 @@ saveRDS(difference_bootstraps_fift, "../output/mapping/difference_bootstraps_fif
 
 # Positional scans to define confidence interval
 difference_positional_fift <- run.positional.scans(difference_bootstraps_fift,keep.full.scans=TRUE,use.multi.impute=FALSE,
-                                                   data=difference,genomecache=cache_path)
+                                                   data=proteinPairs,genomecache=cache_path)
 
 saveRDS(difference_positional_fift, "../output/mapping/difference_positional_fift.rds")
 
@@ -70,7 +70,7 @@ saveRDS(difference_positional_fift, "../output/mapping/difference_positional_fif
 # Chr 10 Locus
 
 # Subsample for top locus (Chr 10)
-difference_rop_ten <- scan.h2lmm(genomecache=cache_path, data=difference, formula=delta ~ 1 + harvest + sex, model="additive",
+difference_rop_ten <- scan.h2lmm(genomecache=cache_path, data=proteinPairs, formula=delta ~ 1 + harvest + sex, model="additive",
                                  use.multi.impute = FALSE, locus.as.fixed=TRUE, return.allele.effects=TRUE,
                                  just.these.loci = difference_ten, pheno.id = "mouse_id", geno.id="strain")
 
@@ -84,7 +84,7 @@ saveRDS(difference_bootstraps_ten,"../output/mapping/difference_bootstraps_ten.r
 
 # Positional scans to define confidence interval
 difference_positional_ten <- run.positional.scans(difference_bootstraps_ten,keep.full.scans=TRUE,use.multi.impute=FALSE,
-                                                  data=difference,genomecache=cache_path)
+                                                  data=proteinPairs,genomecache=cache_path)
 
 saveRDS(difference_positional_ten,"../output/mapping/difference_positional_ten.rds")
 
